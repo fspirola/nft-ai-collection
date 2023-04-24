@@ -1,25 +1,243 @@
-//import React from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { GetServerSideProps } from 'next'
-import { useAddress, useDisconnect, useMetamask, ConnectWallet } from '@thirdweb-dev/react'
+import { useAddress, 
+    useDisconnect, 
+    useMetamask, 
+    ConnectWallet, 
+    useContract,
+    useClaimedNFTSupply, 
+    useClaimConditions,
+    useContractMetadata,
+    useUnclaimedNFTSupply,
+    useActiveClaimConditionForWallet,
+    MediaRenderer,
+    useClaimerProofs,
+    useActiveChain,
+    useConnectionStatus,
+    useNFT
+} from '@thirdweb-dev/react'
 import { sanityClient, urlFor } from '../../../sanity'
 import { Collection } from '../../../typings'
 import Link from 'next/link'
+import { BigNumber, utils } from 'ethers'
+import toast, { Toaster } from 'react-hot-toast'
 
 interface Props {
     collection: Collection[]
 }
+
+const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
   
-
 export default function NFTDropPage({ collection }: Props) {
-    //Auth
-    const connectWithMetamask = useMetamask();
-    const address = useAddress();
+    
     const disconnect = useDisconnect();
+    const chain = useActiveChain();
+    const status = useConnectionStatus();
+     
+    const { contract: nftDrop } = useContract(contractAddress)
+    const address = useAddress();
+    
+    const [claimeSupply, setClaimedSupply] = useState<number>(0);
+    const [totalSupply, setTotalSupply] = useState<number>(0);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [priceInEth, setPriceInEth] = useState<string>();
+    const [quantity, setQuantity] = useState(1);
 
-    console.log(collection);
+    
+    const { data: contractMetadata } = useContractMetadata(nftDrop);
 
+    const claimConditions = useClaimConditions(nftDrop);
+    const claimedSupply = useClaimedNFTSupply(nftDrop);
+    const unclaimedSupply = useUnclaimedNFTSupply(nftDrop);
+    const nft = useNFT(nftDrop, 1);
+
+    const activeClaimCondition = useActiveClaimConditionForWallet(
+        nftDrop,
+        address || ""
+      );
+
+    const numberClaimed = useMemo(() => {
+        return BigNumber.from(claimedSupply.data || 0).toString();
+      }, [claimedSupply]);
+    
+    const maxAvailable = BigNumber.from(unclaimedSupply.data || 0);
+
+    const claimerProofs = useClaimerProofs(nftDrop, address || "");
+
+    const numberTotal = useMemo(() => {
+        return BigNumber.from(claimedSupply.data || 0)
+          .add(BigNumber.from(unclaimedSupply.data || 0))
+          .toString();
+        }, [claimedSupply.data, unclaimedSupply.data]);
+    
+        const priceToMint = useMemo(() => {
+            const bnPrice = BigNumber.from(
+              activeClaimCondition.data?.currencyMetadata.value || 0
+            );
+            return `${utils.formatUnits(
+              bnPrice.mul(quantity).toString(),
+              activeClaimCondition.data?.currencyMetadata.decimals || 18
+            )} ${activeClaimCondition.data?.currencyMetadata.symbol}`;
+          }, [
+            activeClaimCondition.data?.currencyMetadata.decimals,
+            activeClaimCondition.data?.currencyMetadata.symbol,
+            activeClaimCondition.data?.currencyMetadata.value,
+            quantity,
+          ]);
+
+
+          const maxClaimable = useMemo(() => {
+            let bnMaxClaimable;
+            try {
+              bnMaxClaimable = BigNumber.from(
+                activeClaimCondition.data?.maxClaimableSupply || 0
+              );
+            } catch (e) {
+              bnMaxClaimable = BigNumber.from(1_000_000);
+            }
+        
+            let perTransactionClaimable;
+            try {
+              perTransactionClaimable = BigNumber.from(
+                activeClaimCondition.data?.maxClaimablePerWallet || 0
+              );
+            } catch (e) {
+              perTransactionClaimable = BigNumber.from(1_000_000);
+            }
+        
+            if (perTransactionClaimable.lte(bnMaxClaimable)) {
+              bnMaxClaimable = perTransactionClaimable;
+            }
+        
+            const snapshotClaimable = claimerProofs.data?.maxClaimable;
+        
+            if (snapshotClaimable) {
+              if (snapshotClaimable === "0") {
+                // allowed unlimited for the snapshot
+                bnMaxClaimable = BigNumber.from(1_000_000);
+              } else {
+                try {
+                  bnMaxClaimable = BigNumber.from(snapshotClaimable);
+                } catch (e) {
+                  // fall back to default case
+                }
+              }
+            }
+        
+            const maxAvailable = BigNumber.from(unclaimedSupply.data || 0);
+        
+            let max;
+            if (maxAvailable.lt(bnMaxClaimable)) {
+              max = maxAvailable;
+            } else {
+              max = bnMaxClaimable;
+            }
+        
+            if (max.gte(1_000_000)) {
+              return 1_000_000;
+            }
+            return max.toNumber();
+          }, [
+            claimerProofs.data?.maxClaimable,
+            unclaimedSupply.data,
+            activeClaimCondition.data?.maxClaimableSupply,
+            activeClaimCondition.data?.maxClaimablePerWallet,
+          ]);
+
+          const isSoldOut = useMemo(() => {
+            try {
+              return (
+                (activeClaimCondition.isSuccess &&
+                  BigNumber.from(activeClaimCondition.data?.availableSupply || 0).lte(
+                    0
+                  )) ||
+                numberClaimed === numberTotal
+              );
+            } catch (e) {
+              return false;
+            }
+          }, [
+            activeClaimCondition.data?.availableSupply,
+            activeClaimCondition.isSuccess,
+            numberClaimed,
+            numberTotal,
+          ]);
+
+          const isLoading = useMemo(() => {
+            return (
+              activeClaimCondition.isLoading ||
+              unclaimedSupply.isLoading ||
+              claimedSupply.isLoading ||
+              !nftDrop
+            );
+          }, [
+            activeClaimCondition.isLoading,
+            nftDrop,
+            claimedSupply.isLoading,
+            unclaimedSupply.isLoading,
+          ]);
+
+    //setLoading(true);
+    
+
+    const mintNft = () => {
+        if (!nftDrop || !address) return;
+        const quantity = 1;
+        nftDrop?.erc721.claimTo(address, quantity).then(async (tx) => {
+            //const receipt = tx(0).receipt
+            //const claimedTokenId = tx(0).id
+            //const claimedNFT = await tx(0).data()
+            toast("Congratulations! You Successfully Minted", {
+                style: {
+                    background: 'green',
+                    color: 'white',
+                    fontWeight: 'bolder',
+                    fontSize: '17px',
+                    padding:'20px',
+                }
+            })
+            console.log(tx);
+
+        }).catch(err => {
+            console.log(err)
+            toast('Whoops... Something went wrong', {
+                style: {
+                    background: 'red',
+                    color: 'white',
+                    fontWeight: 'bolder',
+                    fontSize: '17px',
+                    padding:'20px',
+                }
+            })
+        }).finally(() => {
+            setLoading(false)
+            //toast.dismiss(notification)
+        })
+    }
+
+    useEffect(() => {
+      disconnect
+      console.log(chain?.chainId, " ", status)
+        if (status === "connected" && chain?.chainId != 80001) {
+          console.log("Entrou no IF ", chain)
+          toast('Connected to an unsupported network. Please connect to a Mumbai test network', {
+            style: {
+                background: 'red',
+                color: 'white',
+                fontWeight: 'bolder',
+                fontSize: '17px',
+                padding:'20px',
+            }
+         })
+          disconnect;
+          console.log(chain?.chainId, " ", status)
+       }
+    },[chain, disconnect,status])
+    
   return (
     <div className='flex h-screen flex-col lg:grid lg:grid-cols-10'>
+    <Toaster position='bottom-center' />
+
     {/* Left */}
     {collection.map((coll, index) => (
         <div key={index} className='bg-gradient-to-br from-cyan-800 to-rose-500 lg:col-span-4 '>
@@ -30,10 +248,11 @@ export default function NFTDropPage({ collection }: Props) {
                 </div>
                     <div className='space-y-6 p-5 text-center'>
                             <h1 className='text-4xl font-bold text-white'>
-                                {coll.nftCollection}
+                                {/*coll.nftCollection*/}
+                                {contractMetadata?.description}
                             </h1>
                             <h2 className='text-xl text-gray-300'>
-                            {coll.description}
+                            {/*coll.description*/}
                             </h2>
                     </div>
             </div>
@@ -60,12 +279,6 @@ export default function NFTDropPage({ collection }: Props) {
                 btnTitle="Connect Wallet"
             />
 
-            <button onClick={() => (address ? disconnect(): connectWithMetamask())} 
-             className='rounded-full bg-rose-400 px-4 py-2 text-xs text-bold text-white 
-                lg:px-5 lg:py-3 lg:text-base'>
-                    {address ? 'Sign out' : 'Sign In'}
-            </button>
-
         </header>
 
         <hr className='my-2 border' />
@@ -77,25 +290,43 @@ export default function NFTDropPage({ collection }: Props) {
         {collection.map((collection, index) => (
                 <div key={index} className='mt-10 flex flex-1 flex-col items-center space-y-6 text-center 
                 lg:justify-center lg:space-y-0'>
-                    <img className='w-80 object-cover pb-10 lg:h-40'
-                        src={urlFor(collection.mainImage).url()} alt="" 
+                    <MediaRenderer
+                      className='w-80 object-cover pb-10 lg:h-40'
+                      src={contractMetadata?.image} 
+                      alt={`${contractMetadata?.name} preview image`}
                     />
                     <h1 className='text-3xl font-bold lg:text-5xl lg:font-extrabold'>
-                        {collection.title}
+                    {contractMetadata?.name}
                     </h1>
-                    <p className='pt-2 text-xl text-green-500'> XX / YY NFTs claimed</p>
+                    {isLoading ? (
+                      <p className='animate-pulse pt-2 text-xl text-green-500'> 
+                        Loading Supply Count...</p>
+                    ) : (
+                      <p className='pt-2 text-xl text-green-500'> 
+                       {numberClaimed} / {numberTotal?.toString()} NFTs claimed</p>
+                    )}
+
+                    {isLoading && (
+                        <img className='h-80 w-80 object-contain' 
+                        src="https://cdn.hackernoon.com/images/0*4Gzjgh9Y7Gu8KEtZ.gif" alt="" />
+                    )}
+                    
                 </div>
          ))}
                 {/* Mint button */}
-                <button className='h-16 w-full rounded-full bg-red-600  text-white font-bold'>
-                    MInt NFT (0.01ETH)
+                <button onClick={mintNft} disabled={isLoading || isSoldOut || !address} 
+                className='h-16 w-full rounded-full bg-red-600  text-white font-bold disabled:bg-gray-400'>
+                    
+                    {isLoading ? (
+                        <>Loading</>
+                    ): isSoldOut ? (
+                        <>SOLD OUT</>
+                    ): !address ? (
+                        <>Sign in to Mint</>
+                    ): (
+                        <span className='font-bold'>Claim your NFT</span>
+                    )}
                 </button>
-       
-
-
-
-
-       
     </div>
   </div>
   )

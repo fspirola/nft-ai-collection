@@ -10,7 +10,7 @@ interface Props {
 
 export default function Home({ collections }: Props) {
   return (
-    <div className='max-w-7xl mx-w-7xl flex flex-col min-w-7xl py-20 px-10 2xl:px-0'>
+    <div className='max-w-7xl mx-w-7xl flex flex-col min-w-7xl py-5 px-10 2xl:px-0'>
         <Head>
           <title>NFT AI Collection</title>
           <link rel="icon" href='/favicon.ico' />
@@ -22,7 +22,7 @@ export default function Home({ collections }: Props) {
             </span>{' '}
             Marketplace
           </h1>  
-          <main className='bg-slate-100 p-10 shadow-xl shadow-rose-400/20'>
+          <main className='bg-slate-100 p-5 shadow-xl shadow-rose-400/20'>
             <div className='grid space-x-3 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4'>
               {collections.map((collection, index) => (
                 <Link key={index} href={`/nft/${collection.slug.current}`}>
