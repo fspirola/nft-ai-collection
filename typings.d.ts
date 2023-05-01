@@ -28,3 +28,11 @@ export interface Collection {
     mainImage: Image
     previewImage: Image
 }
+
+export interface CollectionApi {
+    id: string
+    title: string
+    description: string
+    slug: string
+    imageUrl: string
+}

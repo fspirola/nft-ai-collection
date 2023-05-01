@@ -178,15 +178,16 @@ export default function NFTDropPage({ collection }: Props) {
           ]);
 
     //setLoading(true);
-    
 
     const mintNft = () => {
         if (!nftDrop || !address) return;
         const quantity = 1;
+        
         nftDrop?.erc721.claimTo(address, quantity).then(async (tx) => {
             //const receipt = tx(0).receipt
             //const claimedTokenId = tx(0).id
             //const claimedNFT = await tx(0).data()
+            
             toast("Congratulations! You Successfully Minted", {
                 style: {
                     background: 'green',
@@ -216,7 +217,6 @@ export default function NFTDropPage({ collection }: Props) {
     }
 
     useEffect(() => {
-      disconnect
       console.log(chain?.chainId, " ", status)
         if (status === "connected" && chain?.chainId != 80001) {
           console.log("Entrou no IF ", chain)

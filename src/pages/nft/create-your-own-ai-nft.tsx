@@ -13,7 +13,8 @@ import { useAddress,
 
 import axios from 'axios';
 
-const contractAddress = "0x12Be85199878E7B0d82a36c456eac975fD402F73";
+//const contractAddress = "0x12Be85199878E7B0d82a36c456eac975fD402F73";
+const contractAddress = "0x937ac677Ea4E01Fb4F9f3A1Bd86ee2f45423a3Cd";
 
 export default function Home() {
   const [prompt, setPrompt] = useState("");
@@ -113,7 +114,7 @@ export default function Home() {
   const mintNft = async () => {
     if (!nftDrop || !address) return;
 
-    nftDrop?.erc721.mint(url).then(async (tx) => {
+    nftDrop?.erc721.mintTo(address, url).then(async (tx) => {
         console.log(address, " ", url)
         toast("Congratulations! You Successfully Minted", {
             style: {
@@ -124,6 +125,7 @@ export default function Home() {
                 padding:'20px',
             }
         })
+        console.log(tx);
 
 
     }).catch(err => {
