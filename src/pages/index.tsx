@@ -10,8 +10,12 @@ interface Props {
   collectionsApi: CollectionApi[]
 }
 
+const dev = process.env.NEXT_PUBLIC_APP_ENV !== 'production'
+const server = dev ? 'http://localhost:3000' : 'https://nft-ai-collection-git-main-fspirola.vercel.app/'
+
 export default function Home({  collections, collectionsApi }: Props) {
   console.log("API ", collectionsApi, " Connections: ", collections)
+  console.log(server)
   return (
     <div className='max-w-7xl mx-w-7xl flex flex-col min-w-7xl py-5 px-10 2xl:px-0'>
         <Head>
@@ -77,7 +81,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
 
   //const collections = await sanityClient.fetch(query)
-  const res = await fetch("http://localhost:3000/api/hello")
+  const res = await fetch(`${server}/api/hello`)
   const collectionsApi = await res.json()
 
   return {
