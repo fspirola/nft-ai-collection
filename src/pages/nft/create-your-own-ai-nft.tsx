@@ -5,15 +5,12 @@ import { useState } from "react";
 import { toast, Toaster } from "react-hot-toast";
 import Link from "next/link";
 import { useAddress, 
-
     ConnectWallet, 
     useContract,
-
 } from '@thirdweb-dev/react'
 
 import axios from 'axios';
 
-//const contractAddress = "0x12Be85199878E7B0d82a36c456eac975fD402F73";
 const contractAddress = "0x937ac677Ea4E01Fb4F9f3A1Bd86ee2f45423a3Cd";
 
 export default function Home() {
@@ -262,8 +259,6 @@ export default function Home() {
                     ): (
                         <span className='font-bold'>Mint NFT</span>
                     )}
-                    
-                    
                 </button>
           </div>
         </div>

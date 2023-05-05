@@ -10,7 +10,6 @@ import { useAddress,
     useTransferNFT,
 } from '@thirdweb-dev/react'
 
-//const contractAddress = "0x12Be85199878E7B0d82a36c456eac975fD402F73";
 const contractAddress = "0x937ac677Ea4E01Fb4F9f3A1Bd86ee2f45423a3Cd";
 
 export default function Home() {
@@ -22,7 +21,6 @@ export default function Home() {
   const { contract: nftDrop } = useContract(contractAddress)
   const address = useAddress();
   const collection = useOwnedNFTs(nftDrop, address);
-  const transferNFT = useTransferNFT(nftDrop);
 
   const showLoadingState = loading || (image && !canShowImage);
 

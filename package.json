@@ -9,7 +9,6 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@sanity/image-url": "^1.0.2",
     "@thirdweb-dev/react": "^3.11.7",
     "@thirdweb-dev/sdk": "^3.10.10",
     "@types/node": "18.15.11",
