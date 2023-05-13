@@ -16,6 +16,7 @@ const contractAddress = "0x937ac677Ea4E01Fb4F9f3A1Bd86ee2f45423a3Cd";
 export default function Home() {
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
+  const [minting, setMinting] = useState(false);
   const [image, setImage] = useState("")
   const [canShowImage, setCanShowImage] = useState(false);
   const [description, setDescription] = useState("")
@@ -109,10 +110,14 @@ export default function Home() {
   }
 
   const mintNft = async () => {
-    if (!nftDrop || !address) return;
 
+    if (!nftDrop || !address) return;
+    setMinting(true);
+    toast("Minting your NFT...", { position: "top-center" });
     nftDrop?.erc721.mintTo(address, url).then(async (tx) => {
-        console.log(address, " ", url)
+
+      console.log(address, " ", url, " ", loading)
+      
         toast("Congratulations! You Successfully Minted", {
             style: {
                 background: 'green',
@@ -137,7 +142,7 @@ export default function Home() {
             }
         })
     }).finally(() => {
-        setLoading(false)
+        setMinting(false)
         //toast.dismiss(notification)
     })
 }
@@ -252,8 +257,8 @@ export default function Home() {
                 className='min-h-[40px] shadow-sm sm:w-[100px] py-2 inline-flex justify-center font-medium items-center 
                 px-4 bg-green-600 text-gray-100 sm:ml-2 rounded-md hover:bg-green-700 disabled:bg-gray-400"'>
                     
-                    {loading ? (
-                        <>Loading</>
+                    {minting ? (
+                        <>Minting...</>
                     ): !address ? (
                         <>Sign in to Mint</>
                     ): (
