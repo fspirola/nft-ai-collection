@@ -143,7 +143,6 @@ export default function Home() {
         })
     }).finally(() => {
         setMinting(false)
-        //toast.dismiss(notification)
     })
 }
 
@@ -196,7 +195,6 @@ export default function Home() {
               placeholder="Prompt for image"
               onChange={(e) => setDescription(e.target.value)}
             />
-
                 <button disabled={loading || !address} 
                   className='min-h-[40px] shadow-sm sm:w-[100px] py-2 inline-flex justify-center font-medium items-center 
                   px-4 bg-green-600 text-gray-100 sm:ml-2 rounded-md hover:bg-green-700 disabled:bg-gray-400"
@@ -219,7 +217,6 @@ export default function Home() {
                 className={cn("w-44 rounded-xl object-cover lg:h-96 lg:w-72", {
                   "opacity-100": canShowImage,
                 })}
-                // src={image}
                 src={image}
               />
               ) : loading ? (

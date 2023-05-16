@@ -7,20 +7,25 @@ import { useAddress,
     useContract,
     MediaRenderer,
     useOwnedNFTs,
-    useTransferNFT,
+    useActiveChain,
+    useNetworkMismatch,
+    useSwitchChain 
 } from '@thirdweb-dev/react'
 
 const contractAddress = "0x937ac677Ea4E01Fb4F9f3A1Bd86ee2f45423a3Cd";
 
 export default function Home() {
-  const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
   const [image, setImage] = useState("")
   const [canShowImage, setCanShowImage] = useState(false);
+  const [isOwner, setIsOwner] = useState<boolean | undefined>(false)
  
   const { contract: nftDrop } = useContract(contractAddress)
   const address = useAddress();
   const collection = useOwnedNFTs(nftDrop, address);
+  const chain = useActiveChain();
+  const isMismatched = useNetworkMismatch();
+  const switchChain = useSwitchChain();
 
   const showLoadingState = loading || (image && !canShowImage);
 
@@ -52,7 +57,7 @@ export default function Home() {
 
         <hr className='my-2 border' />
         {address && (
-            <p className='text-center text-sm text-rose-400'>You`re logged in with wallet {address.substring(0,5)}...{address.substring(address.length-5)}</p>
+            <p className='text-center text-sm text-rose-400'>You`re logged in with wallet {address.substring(0,5)}...{address.substring(address.length-5)} in {chain?.name} Network</p>
         )}
 
         <Toaster position='bottom-center' />
@@ -63,8 +68,9 @@ export default function Home() {
           <section className="bg-gray-100 dark:bg-gray-900 py-5 px-12">
             <div className="grid grid-flow-row gap-8 text-neutral-600 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"> 
                 {collection.data?.map(function(d){
+                  //console.log(getAllOwners())
                   if (d.owner.trim() === address?.trim()) {
-                    console.log("IF ", d.owner, " ", address)
+                    console.log("IF Aqui", d.owner, " ", address, " Tamanho", collection.data.length)
                     return (
                       <div key={d.metadata.id} className='my-8 rounded shadow-lg shadow-gray-200 dark:shadow-gray-900 bg-white dark:bg-gray-800 duration-300 hover:-translate-y-1'>
                           <MediaRenderer
@@ -80,17 +86,11 @@ export default function Home() {
                             <div className='mt-5 flex flex-1 flex-col items-center space-y-6 text-center 
                                   lg:justify-center lg:space-y-0'>
                                <div className="w-full text-center mx-auto">
-                                  {/* Transfer button 
-                                  <button  disabled={loading || !address} 
-                                      className='group rounded-2xl h-12 w-48 bg-green-500 font-bold text-lg text-white relative overflow-hidden hover:bg-green-700 disabled:bg-gray-400'>
-                                          {loading ? (
-                                              <>Loading</>
-                                          ): !address ? (
-                                              <>Sign in to Transfer</>
-                                          ): (
-                                              <span className='font-bold'>Transfer NFT</span>
-                                          )}
-                                  </button>*/}
+                                      <Link href={`https://testnets.opensea.io/assets/mumbai/${contractAddress}/${d.metadata.id}`} target="_blank">
+                                        <small className="text-sm text-blue-400 dark:text-white ">
+                                          See on Opensea 
+                                        </small>
+                                      </Link>
                                 </div>
                            </div>
                          </div>   
